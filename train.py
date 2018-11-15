@@ -16,7 +16,7 @@ from models.ResNet import *
 
 def run():
     # Parameters
-    num_epochs = 1 #10 # do not have to train 10 every time
+    num_epochs = 1 # do not have to train 10 every time
     output_period = 100
     batch_size = 100
 
@@ -50,7 +50,7 @@ def run():
         for batch_num, (inputs, labels) in enumerate(train_loader, 1):
             inputs = inputs.to(device)
             labels = labels.to(device)
-            print(batch_num)
+            #print(batch_num)
             #print(inputs)
             #print(labels)                       
             optimizer.zero_grad()
@@ -87,7 +87,7 @@ def run():
         for batch_num, (inputs, labels) in enumerate(val_loader, 1):
             inputs = inputs.to(device)
             labels = labels.to(device)
-            print(labels)
+            #print(labels)
             outputs = model(inputs)
  
             acc1, acc5 = accuracy(outputs, labels, topk=(1, 5))
@@ -120,7 +120,7 @@ def run():
         
         for i in range(batch_size):    
             val, index = outputs[i].topk(5, 0, True, True)
-            f.write("test/%08d.jpg %d %d %d %d %d \n" % ((batch_num-1)*(i+1), index[0], index[1], index[2], index[3], index[4]))
+            f.write("test/%08d.jpg %d %d %d %d %d \n" % ((batch_num-1)*batch_size+(i+1), index[0], index[1], index[2], index[3], index[4]))
 
     f.close()
 
