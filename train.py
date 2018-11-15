@@ -16,7 +16,7 @@ from models.ResNet import *
 
 def run():
     # Parameters
-    num_epochs = 1 # do not have to train 10 every time
+    num_epochs = 10 # do not have to train 10 every time
     output_period = 100
     batch_size = 100
 
@@ -31,7 +31,15 @@ def run():
     criterion = nn.CrossEntropyLoss().to(device)
     # TODO: optimizer is currently unoptimized
     # there's a lot of room for improvement/different optimizers
-    optimizer = optim.SGD(model.parameters(), lr=1e-3) # change lr value in order to change learning rate 
+    OPTIMIZATION_OPTION = 0
+
+    optimizer = ''
+    if OPTIMIZATION_OPTION == 0: #default
+        optimizer = optim.SGD(model.parameters(), lr=1e-3) # change lr value in order to change learning rate 
+    elif OPTIMIZATION_OPTION == 1:
+        # add your optimization here..
+        # optimizer = ..
+        pass
 
     top1_dic = {}
     top5_dic = {}
