@@ -14,15 +14,15 @@ import dataset
 from models.AlexNet import *
 from models.ResNet import *
 
-def run():
+def run(OPTIMIZATION_OPTION = 0):
     # Parameters
-    num_epochs = 10 # do not have to train 10 every time
+    num_epochs = 20 # do not have to train 10 every time
     output_period = 100
     batch_size = 100
 
     # setup the device for running
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = resnet_18()
+    model = resnet_34()
     model = model.to(device)
 
     train_loader, val_loader = dataset.get_data_loaders(batch_size)
@@ -31,15 +31,14 @@ def run():
     criterion = nn.CrossEntropyLoss().to(device)
     # TODO: optimizer is currently unoptimized
     # there's a lot of room for improvement/different optimizers
-    OPTIMIZATION_OPTION = 0
-
+    
     optimizer = ''
     if OPTIMIZATION_OPTION == 0: #default
         optimizer = optim.SGD(model.parameters(), lr=1e-3) # change lr value in order to change learning rate 
     elif OPTIMIZATION_OPTION == 1:
         # add your optimization here..
         # optimizer = ..
-        pass
+        optimizer = optim.SGD(model.parameters(), lr=1e-3, dampening=0.5)
 
     top1_dic = {}
     top5_dic = {}
@@ -150,5 +149,8 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 print('Starting training')
-run()
+OPTIMIZATION_COUNT = 2
+for i in range(OPTIMIZATION_COUNT):
+	print("************ Running optimization %d" % i)
+	run(i)
 print('Training terminated')
