@@ -31,15 +31,30 @@ def run(OPTIMIZATION_OPTION = 0):
     criterion = nn.CrossEntropyLoss().to(device)
     # TODO: optimizer is currently unoptimized
     # there's a lot of room for improvement/different optimizers
-    
+    lr = 1e-3
+    lr_step = 1
     optimizer = ''
     if OPTIMIZATION_OPTION == 0: #default
         optimizer = optim.SGD(model.parameters(), lr=1e-3) # change lr value in order to change learning rate 
-    elif OPTIMIZATION_OPTION == 1:
+    elif OPTIMIZATION_OPTION == 2:
         # add your optimization here..
         # optimizer = ..
-        optimizer = optim.SGD(model.parameters(), lr=1e-3, dampening=0.5)
+        optimizer = optim.SGD(model.parameters(), lr=1e-1, dampening=0.5, weight_decay=1e-4)
+    elif OPTIMIZATION_OPTION == 1:
+	optimizer = optim.SGD(list(filter(lambda p: p.requires_grad, model.parameters())), lr=1e-1, momentum=0.9, dampening=0.5, weight_decay=1e-4)
+	scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+    elif OPTIMIZATION_OPTION == 3:
+	# starting from low lr and increasing lr at each batch in order to find optimal lr 
+	min_lr = 1e-7
+	max_lr = 10
 
+	lr = min_lr
+        optimizer = optim.SGD(model.parameters(), lr=min_lr)
+	
+	lr_step=(max_lr/min_lr)**(1/100)
+  	output_period = 1
+    else:
+     	output_period = 100
     top1_dic = {}
     top5_dic = {}
 
@@ -52,6 +67,7 @@ def run(OPTIMIZATION_OPTION = 0):
         running_loss = 0.0
         for param_group in optimizer.param_groups:
             print('Current learning rate: ' + str(param_group['lr']))
+	scheduler.step()
         model.train()
 
         for batch_num, (inputs, labels) in enumerate(train_loader, 1):
@@ -66,7 +82,7 @@ def run(OPTIMIZATION_OPTION = 0):
             loss = criterion(outputs, labels)
             loss.backward()
             topk = 5
-            val, index = outputs[0].topk(topk, 0, True, True)
+            #val, index = outputs[0].topk(topk, 0, True, True)
             #print(val, index) 
             
             optimizer.step()
@@ -79,7 +95,13 @@ def run(OPTIMIZATION_OPTION = 0):
                     ))
                 running_loss = 0.0
                 gc.collect()
-	   
+
+            # update learning rate every batch in order to get the best lr
+	    # ref: Cyclical Learning Rates for Training Neural Networks 	   
+	    lr = lr * lr_step
+	    for param_group in optimizer.param_groups:
+		param_group['lr'] = lr
+
         gc.collect()
         # save after every epoch
         torch.save(model.state_dict(), "models/model.%d" % epoch)
