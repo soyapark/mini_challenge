@@ -123,26 +123,50 @@ def run(OPTIMIZATION_OPTION = 0):
         # TODO: Calculate classification error and Top-5 Error
         # on training and validation datasets here
         # comparing the labels vector against the output vector? 
+        print("Validating validation datasets ... ")
         model.eval()
-        print("Validating ... ")
-        top1_list = []
-        top5_list = []
+        top1_list_val = []
+        top5_list_val = []
         for batch_num, (inputs, labels) in enumerate(val_loader, 1):
             inputs = inputs.to(device)
             labels = labels.to(device)
-            #print(labels)
             outputs = model(inputs)
- 
+
             acc1, acc5 = accuracy(outputs, labels, topk=(1, 5))
-            top1_list.append(acc1[0] / inputs.size(0))
-            top5_list.append(acc5[0] / inputs.size(0))
- 
-        top1_dic[epoch] = np.mean(top1_list)
-        top5_dic[epoch] = np.mean(top5_list)
- 
+            top1_list_val.append(acc1[0] / inputs.size(0))
+            top5_list_val.append(acc5[0] / inputs.size(0))
+
+        top1_dic_val[epoch] = np.mean(top1_list_val)
+        top5_dic_val[epoch] = np.mean(top5_list_val)
+
         print("The current model" + str(epoch) + ":")
-        print("Top 1 Accuracy: " + str(np.mean(top1_list)))
-        print("Top 5 Accuracy: " + str(np.mean(top5_list)))
+        print("Top 1 Accuracy: " + str(np.mean(top1_list_val)))
+        print("Top 5 Accuracy: " + str(np.mean(top5_list_val)))
+
+        gc.collect()
+
+        if np.mean(top5_list_val) > 0.70:
+            print("Predicting test datasets cuz it above 70.0% ... ")
+            model.eval()
+            _, test_loader = dataset.get_val_test_loaders(batch_size)
+
+            localtime   = time.localtime()
+            timeString  = time.strftime("%m%d%H%M%S", localtime)
+
+            f = open("output%s.txt" % timeString, "w")
+
+            for batch_num, (inputs, labels) in enumerate(test_loader, 1):
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+
+                for i in range(batch_size):    
+                    _, index = outputs[i].topk(5, 0, True, True)
+                    f.write("test/%08d.jpg %d %d %d %d %d \n" % ((batch_num-1)*batch_size+(i+1), 
+                        index[0], index[1], index[2], index[3], index[4]))
+
+            f.close()
+        
         gc.collect()
         epoch += 1
 
