@@ -34,6 +34,7 @@ def run(OPTIMIZATION_OPTION = 0):
     lr = 1e-3
     lr_step = 1
     optimizer = ''
+    scheduler = ''
     if OPTIMIZATION_OPTION == 0: #default
         optimizer = optim.SGD(model.parameters(), lr=1e-3) # change lr value in order to change learning rate 
     elif OPTIMIZATION_OPTION == 3:
@@ -45,17 +46,18 @@ def run(OPTIMIZATION_OPTION = 0):
         lr = 1e-1
         optimizer = optim.SGD(list(filter(lambda p: p.requires_grad, model.parameters())), lr=lr, momentum=0.9, dampening=0.5, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
-    elif OPTIMIZATION_OPTION == 2:
+    elif OPTIMIZATION_OPTION == 9:
 	# starting from low lr and increasing lr at each batch in order to find optimal lr 
         min_lr = 1e-7
-        max_lr = 10
+        max_lr = 100
 
         lr = min_lr
-        optimizer = optim.SGD(model.parameters(), lr=min_lr)
+        optimizer = optim.SGD(model.parameters(), lr=min_lr,dampening=0.5, weight_decay=1e-4, momentum=0.9)
 	
         lr_step=(max_lr/min_lr)**(1/100)
         output_period = 1
-    elif OPTIMIZATION_OPTION == 4:
+    elif OPTIMIZATION_OPTION == 8:
+        num_epochs = 9
         # add momentum to option 2
         lr = 1e-1
         optimizer = optim.SGD(model.parameters(), lr=lr, dampening=0.5, weight_decay=1e-4, momentum=0.9)
@@ -81,7 +83,8 @@ def run(OPTIMIZATION_OPTION = 0):
         running_loss = 0.0
         for param_group in optimizer.param_groups:
             print('Current learning rate: ' + str(param_group['lr']))
-        scheduler.step()
+        if scheduler:
+            scheduler.step()
         model.train()
 
         for batch_num, (inputs, labels) in enumerate(train_loader, 1):
@@ -112,6 +115,9 @@ def run(OPTIMIZATION_OPTION = 0):
 
             # update learning rate every batch in order to get the best lr
 	    # ref: Cyclical Learning Rates for Training Neural Networks 	   
+            if lr_step != 1:
+                print(lr)
+            #print()
             lr = lr * lr_step
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
@@ -209,8 +215,9 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 print('Starting training')
-OPTIMIZATION_COUNT = 7
-for i in range(2,OPTIMIZATION_COUNT):
+OPTIMIZATION_COUNT = 10
+for i in range(8,OPTIMIZATION_COUNT):
 	print("************ Running optimization %d" % i)
 	run(i)
 print('Training terminated')
+print()
